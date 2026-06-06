@@ -5,26 +5,36 @@ def display_conclusions(all_results, scenarios):
     # analisis per algoritma
     for algo in algorithms:
         algo_results = [r for r in all_results if r["algorithm"] == algo]
+        run_results = [r for r in algo_results if not r.get("skipped", False)]
 
-        total_time = sum(r["time"] for r in algo_results)
-        avg_time = total_time / len(algo_results) if algo_results else 0
-        solutions_found = sum(1 for r in algo_results if r["found_solution"])
         total_scenarios = len(algo_results)
+        scenarios_run = len(run_results)
+        solutions_found = sum(1 for r in run_results if r["found_solution"])
 
-        avg_explored = (sum(r["explored"] for r in algo_results) / len(algo_results)
-                        if algo_results else 0)
+        total_time = sum(r["time"] for r in run_results)
+        avg_time = total_time / scenarios_run if scenarios_run > 0 else 0
 
-        valid_costs = [r["cost"] for r in algo_results
+        avg_explored = (sum(r["explored"] for r in run_results) / scenarios_run
+                        if scenarios_run > 0 else 0)
+
+        valid_costs = [r["cost"] for r in run_results
                        if r["found_solution"] and r["cost"] != float('inf')]
         avg_cost = sum(valid_costs) / len(valid_costs) if valid_costs else float('inf')
 
         print(f"\n{algo.upper()}")
-        print(f"  Solusi ditemukan : {solutions_found}/{total_scenarios} skenario")
-        print(f"  Rata-rata waktu  : {avg_time:.4f} detik")
-        print(f"  Rata-rata eksplorasi: {avg_explored:,.0f} konfigurasi")
-        if avg_cost != float('inf'):
-            print(f"  Rata-rata cost   : {avg_cost:.2f}")
+        print(f"  Dijalankan       : {scenarios_run}/{total_scenarios} skenario")
+        if scenarios_run > 0:
+            print(f"  Solusi ditemukan : {solutions_found}/{scenarios_run} skenario yang dijalankan")
+            print(f"  Rata-rata waktu  : {avg_time:.4f} detik pada skenario yang dijalankan")
+            print(f"  Rata-rata eksplorasi: {avg_explored:,.0f} konfigurasi")
+            if avg_cost != float('inf'):
+                print(f"  Rata-rata cost   : {avg_cost:.2f}")
+            else:
+                print(f"  Rata-rata cost   : N/A")
         else:
+            print(f"  Solusi ditemukan : N/A")
+            print(f"  Rata-rata waktu  : N/A")
+            print(f"  Rata-rata eksplorasi: N/A")
             print(f"  Rata-rata cost   : N/A")
 
     print("\n\nRINGKASAN PERBANDINGAN")
@@ -34,7 +44,7 @@ def display_conclusions(all_results, scenarios):
     for sc in scenarios:
         sc_name = sc["name"]
         sc_results = [r for r in all_results if r["scenario"] == sc_name]
-        run_results = [r for r in sc_results if r["time"] > 0]
+        run_results = [r for r in sc_results if r["time"] > 0 and not r.get("skipped", False)]
         if run_results:
             run_results.sort(key=lambda r: r["time"])
             fastest = run_results[0]
@@ -49,9 +59,24 @@ def display_conclusions(all_results, scenarios):
         sc_results = [r for r in all_results if r["scenario"] == sc_name
                       and r["found_solution"]]
         if sc_results:
-            sc_results.sort(key=lambda r: r["cost"])
-            best = sc_results[0]
-            print(f"  Skenario {sc_name}: {best['algorithm']} terbaik (Cost: {best['cost']:.2f})")
+            min_cost = min(r["cost"] for r in sc_results)
+            best_algos = [r for r in sc_results if r["cost"] == min_cost]
+            
+            if len(best_algos) == len(sc_results) and len(sc_results) > 1:
+                if len(best_algos) == 2:
+                    algo_names = f"{best_algos[0]['algorithm']} dan {best_algos[1]['algorithm']}"
+                else:
+                    algo_names = ", ".join(r["algorithm"] for r in best_algos[:-1]) + ", dan " + best_algos[-1]["algorithm"]
+                print(f"  Skenario {sc_name}: {algo_names} sama-sama menghasilkan cost terbaik {min_cost:.2f}")
+            elif len(best_algos) > 1:
+                if len(best_algos) == 2:
+                    algo_names = f"{best_algos[0]['algorithm']} dan {best_algos[1]['algorithm']}"
+                else:
+                    algo_names = ", ".join(r["algorithm"] for r in best_algos[:-1]) + ", dan " + best_algos[-1]["algorithm"]
+                print(f"  Skenario {sc_name}: {algo_names} terbaik (Cost: {min_cost:.2f})")
+            else:
+                best = best_algos[0]
+                print(f"  Skenario {sc_name}: {best['algorithm']} terbaik (Cost: {best['cost']:.2f})")
         else:
             print(f"  Skenario {sc_name}: Tidak ada solusi valid ditemukan")
 
@@ -60,14 +85,18 @@ def display_conclusions(all_results, scenarios):
     for sc in scenarios:
         sc_name = sc["name"]
         sc_results = [r for r in all_results if r["scenario"] == sc_name]
-        run_results = [r for r in sc_results if r["explored"] > 0]
-        if run_results:
+        run_results = [r for r in sc_results if not r.get("skipped", False)]
+        if len(run_results) > 1:
             run_results.sort(key=lambda r: r["explored"])
             most_efficient = run_results[0]
             least_efficient = run_results[-1]
             print(f"  Skenario {sc_name}:")
             print(f"    Paling efisien : {most_efficient['algorithm']} ({most_efficient['explored']:,} konfigurasi)")
             print(f"    Paling boros   : {least_efficient['algorithm']} ({least_efficient['explored']:,} konfigurasi)")
+        elif len(run_results) == 1:
+            only_algo = run_results[0]
+            print(f"  Skenario {sc_name}:")
+            print(f"    Hanya {only_algo['algorithm']} yang dijalankan karena algoritma lain diskip akibat kompleksitas ruang solusi.")
         else:
             print(f"  Skenario {sc_name}: N/A")
 
