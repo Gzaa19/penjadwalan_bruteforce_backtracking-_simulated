@@ -1,4 +1,4 @@
-# Analisis Algoritma Brute Force, Backtracking, dan Simulated Annealing pada Penjadwalan Ulang Asisten Praktikum Berpasangan
+# Analisis Algoritma Brute Force, Backtracking, dan Simulated Annealing pada Penjadwalan Ulang Asisten Praktikum Berpasangan untuk Mengatasi Benturan Jadwal Praktikum, Kuliah Asisten, dan Kuliah Praktikan di Prodi Informatika Undip
 
 Dokumentasi penelitian dan implementasi kode program untuk perbandingan performa algoritma penjadwalan ulang asisten praktikum berpasangan di Program Studi Informatika, Universitas Diponegoro. Penelitian ini bertujuan untuk meminimalkan benturan antara jadwal praktikum, jadwal kuliah asisten (Semester 4), dan jadwal kuliah praktikan (Semester 2).
 
